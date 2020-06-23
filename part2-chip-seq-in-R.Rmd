@@ -15,7 +15,23 @@ knitr::opts_chunk$set(echo = TRUE,message=FALSE)
 ```
 # Hands-on chip-seq Analysis in Galaxy and R
 
+### Sheffield Bioinformatics Core
+<img src="images/logo-sm.png" align=right>
 
+web : [sbc.shef.ac.uk](http://sbc.shef.ac.uk)  
+twitter: [SheffBioinfCore](https://twitter.com/SheffBioinfCore)  
+email: [bioinformatics-core@sheffield.ac.uk](bioinformatics-core@sheffield.ac.uk)
+
+-----
+
+# Acknowledgement
+
+Some of these materials are based on courses available at .
+
+- [ATAC-Seq data analysis in Galaxy](https://training.galaxyproject.org/training-material/topics/epigenetics/tutorials/atac-seq/tutorial.html/)
+- [Chip-seq excersizes in R by Jonas Ibn-Salem, JGU Mainz](http://cbdm-01.zdv.uni-mainz.de/~jibnsale/teaching/chip-seq_exercises.html)
+
+-----
 # 1 Requirements
 Install the package "ChIPpeakAnno" from Bioconductor:
 
