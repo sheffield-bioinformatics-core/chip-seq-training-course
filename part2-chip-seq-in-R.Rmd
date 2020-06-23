@@ -75,4 +75,4 @@ score(FOXA1) <- FOXA1_df$X8
 FOXA1
 ```
 
-
+# 4. Basic number and statistics of the FOXA1 peaks
