@@ -13,7 +13,7 @@ RUN wget http://www.bioinformatics.babraham.ac.uk/projects/fastqc/fastqc_v0.11.3
 RUN unzip fastqc_v0.11.3.zip
 RUN chmod 755 FastQC/fastqc
 RUN ln -s $(pwd)/FastQC/fastqc /usr/bin/fastqc
-RUN apt-get install -y bowtie2 samtools default-jre build-essential python3.6 zlib1g-dev python3-pip
+RUN apt-get install -y bowtie2 samtools default-jre build-essential bedtools python3.6 zlib1g-dev python3-pip
 ## installing latest version of SRA toolkit
 RUN wget https://ftp-trace.ncbi.nlm.nih.gov/sra/sdk/2.8.1-3/sratoolkit.2.8.1-3-ubuntu64.tar.gz
 RUN gunzip sratoolkit.2.8.1-3-ubuntu64.tar.gz
