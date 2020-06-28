@@ -36,10 +36,8 @@ Some of these materials are based on courses available at .
 Install the package "ChIPpeakAnno" from Bioconductor:
 
 ```{r}
-if (!requireNamespace("BiocManager", quietly = TRUE))
-    install.packages("BiocManager")
-
-BiocManager::install("ChIPpeakAnno")
+if(!require(ChIPpeakAnno)) BiocManager::install("ChIPpeakAnno")
+if(!require(Vennerable)) install.packages("Vennrable")
 
 ```
 
@@ -52,7 +50,7 @@ library(readr)
 FOXA1_df <- read_tsv("data/FOXA1.bed", col_names = F)
 FOXA1_df
 
-ER_df <- read_tsv("data/ER.bed")
+ER_df <- read_tsv("data/ER.bed", col_names = F)
 ER_df
 ```
 
@@ -75,4 +73,108 @@ score(FOXA1) <- FOXA1_df$X8
 FOXA1
 ```
 
+```{r}
+ER <- GRanges(
+  ER_df$X1,
+  IRanges(ER_df$X2, ER_df$X3),
+  strand="*"
+)
+
+# we can add more data to each peak subsequently
+names(ER) <- paste("ER_peak", 1:nrow(ER_df), sep="_")
+score(ER) <- ER_df$X8
+  
+# show the first and last lines of the GRanges object
+ER
+```
+
+
 # 4. Basic number and statistics of the FOXA1 peaks
+
+
+What is the number of peaks?
+Use the function length().
+
+```{r}
+length(FOXA1)
+```
+What is the mean, median, and max size of the peaks?
+The function width() returns the sizes of all ranges in a GRanges object as vector.
+
+```{r}
+FOXA1.size <- width(FOXA1)
+summary(FOXA1.size)
+```
+
+3.4 What is the distribution of peak sizes?
+Plot the distribution of sizes using the hist() function.
+
+
+```{r}
+hist(width(FOXA1), xlab="FOXA1 peak size", col="gray")
+```
+
+
+What is the distribution of FOXA1 ChIP-seq peak p-values?
+We plot the histogram of −log10 transformed p-values. Remember that we stored them in the score column of the GRanges object. We can access them using the function score().
+
+```{r}
+# get the -log_10 transformed p-values from the score column
+mlPvals <- score(FOXA1)
+hist(mlPvals, xlab="-log_10(p-value)", col="gray")
+```
+
+# 5. Compare the peaks of ER and FOXA1
+
+Make a barplot of the number of peaks
+```{r}
+bp <- barplot(c(length(ER), length(FOXA1)), names=c("ER", "FOXA1"))
+# add actual values as text lables to the plot
+text(bp, c(length(ER), length(FOXA1)), labels=c(length(ER), length(FOXA1)), pos=1)
+```
+
+Use handy function from `ChIPpeakAnno` to calculate the overlaps Then we use the package Vennerable to build a Venn object with the number of peaks in each subset. This object can than be passed to the ‘plot’ function.
+
+```{r}
+# get subsets of binding sites
+ER.uniq <- setdiff(ER, FOXA1)
+FOXA1.uniq <- setdiff(FOXA1, ER)
+
+
+# plot overlap of binding sites as Venn diagram
+
+
+# build objects with the numbers of sites in the subsets
+venn <- Venn(SetNames=c("ER", "FOXA1"), 
+    Weight=c(
+        '10'=length(ER.uniq), 
+        '11'=length(ovl), 
+        '01'=length(FOXA1.uniq)
+    )
+)
+
+# plot Venn Diagram
+plot(venn)
+```
+
+and make a venn diagram
+
+```{r}
+makeVennDiagram(ovl)
+```
+
+
+# 6. Functional annotation of ChIP-seq peaks
+To understand the function of a transcription factor we want to know to which genes and genomic features it binds.
+
+We will use a TxDb objects. Such an object is an R interface to prefabricated databases contained by specific annotation packages. The package TxDb.Hsapiens.UCSC.hg18.knownGene includes all human genes and transcripts from UCSC with coordinates for the hg18 genome assembly.
+
+```{r}
+
+
+
+# load gene annotation from UCSC for human genome build hg18
+require(TxDb.Hsapiens.UCSC.hg18.knownGene)
+txdb <- TxDb.Hsapiens.UCSC.hg18.knownGene # just a shortcut
+
+```
