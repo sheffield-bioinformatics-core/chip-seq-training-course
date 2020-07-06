@@ -32,6 +32,17 @@ Some of these materials are based on courses available at .
 - [Chip-seq excersizes in R by Jonas Ibn-Salem, JGU Mainz](http://cbdm-01.zdv.uni-mainz.de/~jibnsale/teaching/chip-seq_exercises.html)
 
 -----
+
+# Tutorial overview
+
+This tutorial will cover  the analysis of the ChIP-seq peak data aquired in part 1.
+
+Lets re-examine our workflow. We now have our peaks called in a bed file and are ready for our downstram analysis.
+
+![](images/park_workflow.jpg)
+
+---
+
 # 1 Requirements
 Install the package "ChIPpeakAnno" from Bioconductor:
 

@@ -43,9 +43,21 @@ This morning tutorial covers the following steps in our analysis pipeline
 
 ## Introduction to chip-seq
 
-Chromatin immunoprecipitation sequencing (ChIP-seq), is a technique for analysing protein interactions with DNA. Following ChIP protocols, DNA-bound protein is immunoprecipitated using a specific antibody. The bound DNA is then coprecipitated, purified, and sequenced.
+Chromatin immunoprecipitation sequencing (ChIP-seq), is a technique for analysing protein interactions with DNA. Following ChIP protocols, DNA-bound protein is immunoprecipitated using a specific antibody. The bound DNA is then coprecipitated, purified, and sequenced. 
 
+The aim is to find all regions in the genome bound by a specific transcription factor (orbearing a specific histone modification) in a given experimental condition (cell-type, developmental stage or treatment for example).
 ![](images/szalkowski_schmid_2011.jpg)
+
+### Main steps:
+1. Quality control of raw sequencing data
+2. Mapping reads to the reference genome
+3. Peak calling
+4. Functional analysis
+  * Associating peaks to genes
+  * Functional analysis of regulated genes
+  * Sequence analysis to identify any binding motifs
+
+![](images/park_workflow.jpg)
 
 ## The data
 
@@ -487,7 +499,9 @@ $IMAGE_BASE samtools index MCF7_FOXA1.sorted_pcrdups.bam
 
 # Section 6: Peak Calling
 
-To call peaks we will use MACS2. 
+Now we need to identify the regions in the genome that are significantly enriched with ChIP-seq reads compared to input control.
+
+To call peaks we will use Model-based Analysis of ChIP-Seq data (MACS2).  MACS2 calculates a p-value for each peak using a dynamic Poisson distribution to capture any local biases in read background levels. 
 
 1. Select MACS2 *NGS: Peak calling → MACS2 callpeak* 
 2. In ChIP-seq treatment file, select the treatment bam files (the ones with marked duplicates) 
