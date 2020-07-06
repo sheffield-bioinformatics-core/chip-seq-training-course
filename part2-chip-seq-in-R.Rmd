@@ -30,6 +30,7 @@ Some of these materials are based on courses available at .
 
 - [ATAC-Seq data analysis in Galaxy](https://training.galaxyproject.org/training-material/topics/epigenetics/tutorials/atac-seq/tutorial.html/)
 - [Chip-seq excersizes in R by Jonas Ibn-Salem, JGU Mainz](http://cbdm-01.zdv.uni-mainz.de/~jibnsale/teaching/chip-seq_exercises.html)
+- [The ChIPpeakAnno user’s guide by Jianhong Ou, Jun Yu, Lihua Julie Zhu](https://www.bioconductor.org/packages/release/bioc/vignettes/ChIPpeakAnno/inst/doc/ChIPpeakAnno.html)
 
 -----
 
@@ -44,11 +45,15 @@ Lets re-examine our workflow. We now have our peaks called in a bed file and are
 ---
 
 # 1 Requirements
-Install the package "ChIPpeakAnno" from Bioconductor:
+Install the packages we will need for the analysis
 
 ```{r}
 if(!require(ChIPpeakAnno)) BiocManager::install("ChIPpeakAnno")
-if(!require(Vennerable)) install.packages("Vennrable")
+if(!require(TxDb.Hsapiens.UCSC.hg18.knownGene)) BiocManager::install("TxDb.Hsapiens.UCSC.hg18.knownGene")
+
+if(!require(tidyverse)) BiocManager::install("tidyverse")
+if(!require(rtracklayer)) BiocManager::install("rtracklayer")
+if(!require(reactome.db)) BiocManager::install("reactome.db")
 
 ```
 
@@ -146,18 +151,15 @@ text(bp, c(length(ER), length(FOXA1)), labels=c(length(ER), length(FOXA1)), pos=
 
 Use handy function from `ChIPpeakAnno` to calculate the overlaps Then we use the package Vennerable to build a Venn object with the number of peaks in each subset. This object can than be passed to the ‘plot’ function.
 
+
+
+## How many ER peaks overlap FOXA1 peaks?
 ```{r}
-# get subsets of binding sites
-ER.uniq <- setdiff(ER, FOXA1)
-FOXA1.uniq <- setdiff(FOXA1, ER)
 
-
-# plot overlap of binding sites as Venn diagram
-ovlHits <- findOverlaps(ER, FOXA1)
-ovlHits
-
-
-
+# find overlap of binding sites 
+ovlHits <- findOverlapsOfPeaks(ER, FOXA1)
+ovlHits$venn_cnt
+overlaps <- ovlHits$peaklist[["ER///FOXA1"]]
 
 ```
 
@@ -166,16 +168,17 @@ ovlHits
 ```{r}
 makeVennDiagram(list(ER, FOXA1), NameOfPeaks=c("ER", "FOXA1"),
                 scaled=FALSE, 
-                fill=c("#009E73", "#F0E442"), # circle fill color
-                col=c("#D55E00", "#0072B2"), #circle border color
-                cat.col=c("#D55E00", "#0072B2"))
+                fill=c("#009E73", "#F0E442")) # circle fill color
 ```
 
-and make a venn diagram
+A pie chart is used to demonstrate the overlap features of the common peaks.
+
 
 ```{r}
-makeVennDiagram(ovl)
+
+pie1(table(ovlHits $overlappingPeaks[["ER///FOXA1"]]$overlapFeature))
 ```
+
 
 
 # 6. Functional annotation of ChIP-seq peaks
@@ -183,11 +186,23 @@ To understand the function of a transcription factor we want to know to which ge
 We will use a TxDb objects. Such an object is an R interface to prefabricated databases contained by specific annotation packages. The package TxDb.Hsapiens.UCSC.hg18.knownGene includes all human genes and transcripts from UCSC with coordinates for the hg18 genome assembly.
 
 ```{r}
-
-
-
-# load gene annotation from UCSC for human genome build hg18
-require(TxDb.Hsapiens.UCSC.hg18.knownGene)
+library(TxDb.Hsapiens.UCSC.hg18.knownGene)
 txdb <- TxDb.Hsapiens.UCSC.hg18.knownGene # just a shortcut
 
+## create annotation file from EnsDb or TxDb
+annoData <- toGRanges(txdb, feature="gene")
+annoData[1:2]
+rtracklayer::export(annoData, con="TxDb.Hsapiens.UCSC.hg18.gene.bed")
 ```
+
+Now we overlap the annotation to the peaks
+```{r}
+overlaps.anno <- annotatePeakInBatch(overlaps, AnnotationData=annoData, 
+                                    output="overlapping", maxgap=5000L)
+overlaps.anno$gene_name <- 
+    annoData$gene_name[match(overlaps.anno$feature,
+                             names(annoData))]
+head(overlaps.anno)
+
+```
+
