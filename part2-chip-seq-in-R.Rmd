@@ -50,8 +50,8 @@ Install the packages we will need for the analysis
 ```{r}
 if(!require(ChIPpeakAnno)) BiocManager::install("ChIPpeakAnno")
 if(!require(TxDb.Hsapiens.UCSC.hg18.knownGene)) BiocManager::install("TxDb.Hsapiens.UCSC.hg18.knownGene")
-
-if(!require(tidyverse)) BiocManager::install("tidyverse")
+if(!require(org.Hs.eg.db))BiocManager::install("org.Hs.eg.db")
+if(!require(dplyr)) BiocManager::install("dplyr")
 if(!require(rtracklayer)) BiocManager::install("rtracklayer")
 if(!require(reactome.db)) BiocManager::install("reactome.db")
 
@@ -63,11 +63,11 @@ Upload our MACS2 peak bed files that we downloaded from galaxy
 
 ```{r}
 library(readr)
-FOXA1_df <- read_tsv("data/FOXA1.bed", col_names = F)
+FOXA1_df <- read_tsv("data/FOXA1_full.bed", col_names = T, comment = "#"  )
 FOXA1_df
 
-ER_df <- read_tsv("data/ER.bed", col_names = F)
-ER_df
+# bed format
+ER <- import("data/ER_full.bed", format="bed")
 ```
 
 # 3. Convert peaks into a GRanges object
@@ -76,31 +76,32 @@ A GRanges object form the GenomicRanges packages is a container for genomic loca
 library(GenomicRanges) # load the GenomicRanges pakcage
 
 FOXA1 <- GRanges(
-  FOXA1_df$X1,
-  IRanges(FOXA1_df$X2, FOXA1_df$X3),
+  FOXA1_df$chr,
+  IRanges(FOXA1_df$start, FOXA1_df$end),
   strand="*"
 )
 
 # we can add more data to each peak subsequently
 names(FOXA1) <- paste("FOXA1_peak", 1:nrow(FOXA1_df), sep="_")
-score(FOXA1) <- FOXA1_df$X8
-  
+score(FOXA1) <- FOXA1_df[,"-10*log10(pvalue)"]  
+
 # show the first and last lines of the GRanges object
 FOXA1
 ```
 
-```{r}
-ER <- GRanges(
-  ER_df$X1,
-  IRanges(ER_df$X2, ER_df$X3),
-  strand="*"
-)
+###   Excersie: Read in the ER peaks 
 
-# we can add more data to each peak subsequently
-names(ER) <- paste("ER_peak", 1:nrow(ER_df), sep="_")
-score(ER) <- ER_df$X8
-  
-# show the first and last lines of the GRanges object
+```{r, }
+#We fix the name and score columns.
+
+# assign scores by converting the 'name' feald to type numeric
+score(ER) <- as.numeric(ER$name)
+
+# overwrite the name column
+ER$name <- paste("ER_peaks", 1:length(ER), sep="_")
+
+# use the names() function 
+names(ER) <- ER$name 
 ER
 ```
 
@@ -197,12 +198,74 @@ rtracklayer::export(annoData, con="TxDb.Hsapiens.UCSC.hg18.gene.bed")
 
 Now we overlap the annotation to the peaks
 ```{r}
-overlaps.anno <- annotatePeakInBatch(overlaps, AnnotationData=annoData, 
+overlaps_anno <- annotatePeakInBatch(overlaps, AnnotationData=annoData, 
                                     output="overlapping", maxgap=5000L)
-overlaps.anno$gene_name <- 
-    annoData$gene_name[match(overlaps.anno$feature,
-                             names(annoData))]
-head(overlaps.anno)
+
+head(overlaps_anno)
+
+aCR<-assignChromosomeRegion(overlaps_anno, nucleotideLevel=FALSE, 
+                           precedence=c("Promoters", "immediateDownstream", 
+                                         "fiveUTRs", "threeUTRs", 
+                                         "Exons", "Introns"), 
+                           TxDb=TxDb.Hsapiens.UCSC.hg18.knownGene)
+barplot(aCR$percentage)
 
 ```
+
+Add the gene names to the annotation and write out as `csv` and `bed` files.
+
+```{r}
+library(dplyr)
+library(org.Hs.eg.db)
+overlaps_anno <- addGeneIDs(overlaps_anno, org.Hs.eg.db, IDs2Add = c("symbol","refseq", "ensembl"), 
+feature_id_type = "entrez_id")
+
+
+
+as.data.frame(unname(overlaps_anno)) %>% 
+  dplyr::select(-peakNames,-peak) %>% 
+  readr::write_csv("overlap_peaks_annotated.csv")
+
+names(overlaps_anno) <- lapply(overlaps_anno$peakNames, function(x) paste(x,collapse=":"))
+names(overlaps_anno) <- paste(overlaps_anno$feature,names(overlaps_anno),sep="_")
+
+
+rtracklayer::export(overlaps_anno, con="overlap_peaks.bed")
+
+```
+
+Use functionality within ChIPpeakAnno to perform enrichment (see package vignette).
+
+```{r}
+over <- getEnrichedGO(overlaps_anno, orgAnn="org.Hs.eg.db",
+                      maxP = 0.05, minGOterm = 10,
+                      multiAdjMethod = "BH",condense = TRUE)
+write_csv(over[["bp"]], path = "overlap_peaks_GO.csv")
+```
+
+## Enrichment with Reactome
+
+```{r}
+library(reactome.db)
+path <- getEnrichedPATH(overlaps_anno, "org.Hs.eg.db","reactome.db", maxP = 0.05) %>% 
+  rename(ENTREZID = EntrezID)
+
+gene_anno <- AnnotationDbi::select(org.Hs.eg.db, keys = as.character(path$ENTREZID), keytype="ENTREZID",columns="SYMBOL")
+
+path_anno <- AnnotationDbi::select(reactome.db, keys = as.character(path$path.id), 
+                                   keytype="PATHID",
+                                   columns=c("PATHID","PATHNAME")) %>% rename(path.id = PATHID)
+
+path %>% left_join(gene_anno) %>% 
+  group_by(path.id) %>% 
+  mutate(Genes = paste(unique(SYMBOL),collapse=";")) %>% 
+  ungroup %>% 
+  filter(!duplicated(path.id)) %>% 
+  left_join(path_anno) %>% 
+  distinct %>% 
+  select(-ENTREZID, -PATH, -totaltermInDataset, -totaltermInGenome, -SYMBOL)  %>% 
+  arrange(pvalue) %>% 
+  write_csv("overlap_peaks_reactome.csv")
+```
+
 
