@@ -153,19 +153,22 @@ FOXA1.uniq <- setdiff(FOXA1, ER)
 
 
 # plot overlap of binding sites as Venn diagram
+ovlHits <- findOverlaps(ER, FOXA1)
+ovlHits
 
 
-# build objects with the numbers of sites in the subsets
-venn <- Venn(SetNames=c("ER", "FOXA1"), 
-    Weight=c(
-        '10'=length(ER.uniq), 
-        '11'=length(ovl), 
-        '01'=length(FOXA1.uniq)
-    )
-)
 
-# plot Venn Diagram
-plot(venn)
+
+```
+
+
+
+```{r}
+makeVennDiagram(list(ER, FOXA1), NameOfPeaks=c("ER", "FOXA1"),
+                scaled=FALSE, 
+                fill=c("#009E73", "#F0E442"), # circle fill color
+                col=c("#D55E00", "#0072B2"), #circle border color
+                cat.col=c("#D55E00", "#0072B2"))
 ```
 
 and make a venn diagram
@@ -177,7 +180,6 @@ makeVennDiagram(ovl)
 
 # 6. Functional annotation of ChIP-seq peaks
 To understand the function of a transcription factor we want to know to which genes and genomic features it binds.
-
 We will use a TxDb objects. Such an object is an R interface to prefabricated databases contained by specific annotation packages. The package TxDb.Hsapiens.UCSC.hg18.knownGene includes all human genes and transcripts from UCSC with coordinates for the hg18 genome assembly.
 
 ```{r}
