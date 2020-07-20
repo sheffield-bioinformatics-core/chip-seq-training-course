@@ -87,15 +87,13 @@ if(!require(reactome.db)) BiocManager::install("reactome.db")
 Once we have the packages downloaded, we can upload our MACS2 peak bed files that we downloaded from galaxy. We will first open the readr package, which allows us to import spreadsheets (like our bed file!) into R
 
 ```{r}
-library(readr)
-FOXA1_df <- read_tsv("data/FOXA1_full.bed", col_names = T, comment = "#"  )
-FOXA1_df
+FOXA1_df <- read.table("data/FOXA1_full.bed", header=TRUE)
+head(FOXA1_df)
 
-# bed format
-ER <- import("data/ER_full.bed", format="bed")
 ```
 
-# 3. Convert peaks into a GRanges object
+
+# Convert peaks into a GRanges object
 A GRanges object form the GenomicRanges packages is a container for genomic locations and their associated annotations. We will use this data structure for the ChIP-seq peak coordinates.
 ```{r}
 library(GenomicRanges) # load the GenomicRanges pakcage
@@ -108,49 +106,41 @@ FOXA1 <- GRanges(
 
 # we can add more data to each peak subsequently
 names(FOXA1) <- paste("FOXA1_peak", 1:nrow(FOXA1_df), sep="_")
-score(FOXA1) <- FOXA1_df[,"-10*log10(pvalue)"]  
+score(FOXA1) <- FOXA1_df[,"X.10.log10.pvalue."] 
 
 # show the first and last lines of the GRanges object
 FOXA1
 ```
 
-###   Excersie: Read in the ER peaks 
+# Basic number and statistics of the FOXA1 peaks
 
-```{r, }
-#We fix the name and score columns.
+Now we have loaded in the FOXA1 peaks and converted into a GRanges object, we can carry out some basic statistical analysis and plot simple visualisations.
 
-# assign scores by converting the 'name' feald to type numeric
-score(ER) <- as.numeric(ER$name)
+## Calculate the number of peaks
 
-# overwrite the name column
-ER$name <- paste("ER_peaks", 1:length(ER), sep="_")
-
-# use the names() function 
-names(ER) <- ER$name 
-ER
-```
-
-
-# 4. Basic number and statistics of the FOXA1 peaks
-
-
-What is the number of peaks?
-Use the function length().
+The length() function assesses the number of datapoints (peaks) in the FOXA1 object
 
 ```{r}
 length(FOXA1)
 ```
-What is the mean, median, and max size of the peaks?
+## Calculate mean, median, and max size of the peaks
+
 The function width() returns the sizes of all ranges in a GRanges object as vector.
 
 ```{r}
 FOXA1.size <- width(FOXA1)
 summary(FOXA1.size)
 ```
+## Remove all peaks that are larger than 2kb
 
-3.4 What is the distribution of peak sizes?
+We can romive unusually large peak widths by assining a threshold and removing peaks that are larger than it.
+
+```{r}
+FOXA1 <- FOXA1[width(FOXA1) <= 2000]
+
+```
+
 Plot the distribution of sizes using the hist() function.
-
 
 ```{r}
 hist(width(FOXA1), xlab="FOXA1 peak size", col="gray")
@@ -166,7 +156,27 @@ mlPvals <- score(FOXA1)
 hist(mlPvals, xlab="-log_10(p-value)", col="gray")
 ```
 
-# 5. Compare the peaks of ER and FOXA1
+###   Read in the ER peaks 
+
+```{r, }
+
+
+# bed format
+ER <- import("data/ER_full.bed", format="bed")
+#We fix the name and score columns.
+
+# assign scores by converting the 'name' feald to type numeric
+score(ER) <- as.numeric(ER$name)
+
+# overwrite the name column
+ER$name <- paste("ER_peaks", 1:length(ER), sep="_")
+
+# use the names() function 
+names(ER) <- ER$name 
+ER
+```
+
+# Compare the peaks of ER and FOXA1
 
 Make a barplot of the number of peaks
 ```{r}
@@ -207,7 +217,7 @@ pie1(table(ovlHits $overlappingPeaks[["ER///FOXA1"]]$overlapFeature))
 
 
 
-# 6. Functional annotation of ChIP-seq peaks
+# Functional annotation of ChIP-seq peaks
 To understand the function of a transcription factor we want to know to which genes and genomic features it binds.
 We will use a TxDb objects. Such an object is an R interface to prefabricated databases contained by specific annotation packages. The package TxDb.Hsapiens.UCSC.hg18.knownGene includes all human genes and transcripts from UCSC with coordinates for the hg18 genome assembly.
 
@@ -222,11 +232,10 @@ rtracklayer::export(annoData, con="TxDb.Hsapiens.UCSC.hg18.gene.bed")
 ```
 
 Now we overlap the annotation to the peaks
-```{r}
+```{r, warning=FALSE}
 overlaps_anno <- annotatePeakInBatch(overlaps, AnnotationData=annoData, 
                                     output="overlapping", maxgap=5000L)
 
-head(overlaps_anno)
 
 aCR<-assignChromosomeRegion(overlaps_anno, nucleotideLevel=FALSE, 
                            precedence=c("Promoters", "immediateDownstream", 
@@ -259,10 +268,12 @@ rtracklayer::export(overlaps_anno, con="overlap_peaks.bed")
 
 ```
 
+## Enrichment with ChIPpeakAnno
 Use functionality within ChIPpeakAnno to perform enrichment (see package vignette).
 
 ```{r}
 over <- getEnrichedGO(overlaps_anno, orgAnn="org.Hs.eg.db",
+                      feature_id_type="entrez_id",
                       maxP = 0.05, minGOterm = 10,
                       multiAdjMethod = "BH",condense = TRUE)
 write_csv(over[["bp"]], path = "overlap_peaks_GO.csv")
@@ -272,7 +283,7 @@ write_csv(over[["bp"]], path = "overlap_peaks_GO.csv")
 
 ```{r}
 library(reactome.db)
-path <- getEnrichedPATH(overlaps_anno, "org.Hs.eg.db","reactome.db", maxP = 0.05) %>% 
+path <- getEnrichedPATH(overlaps_anno, "org.Hs.eg.db","reactome.db", maxP = 0.05,feature_id_type="entrez_id" ) %>% 
   rename(ENTREZID = EntrezID)
 
 gene_anno <- AnnotationDbi::select(org.Hs.eg.db, keys = as.character(path$ENTREZID), keytype="ENTREZID",columns="SYMBOL")
