@@ -35,16 +35,16 @@ Some of these materials are based on courses available at .
 -----
 
 # Tutorial overview
+This tutorial will continue the analysis of the ChIP-seq peak data that we aquired in part 1. Let's have another look at our workflow. We now have our chip-seq peaks called in a bed file and are ready for our downstram analysis.
 
-This tutorial will cover  the analysis of the ChIP-seq peak data aquired in part 1.
-
-Lets re-examine our workflow. We now have our peaks called in a bed file and are ready for our downstram analysis.
+For the purposes of looking at peak annotation and enrichments we will look at the complete peak data for the breast cancer dataset. In part 1 we examined a smaller subset of this data for time restrictions.
 
 ![](images/park_workflow.jpg)
 
+For the second part of the analysis we will move onto using the R programming language in RStudio. R is a very useful tool for quickly manipulating and visualising biological data and will allow us to visualise, annotate and investigate our peak data.   Please open up Rstudio now and install the following required packages.
 ---
 
-# 1 Requirements
+# 1 Required R packages
 Install the packages we will need for the analysis
 
 ```{r}
