@@ -36,20 +36,20 @@ Some of these materials are based on courses available at .
 -----
 
 # Tutorial overview
-This tutorial will continue the analysis of the ChIP-seq peak data that we aquired in part 1. Let's have another look at our workflow. We now have our chip-seq peaks called in a bed file and are ready for our downstram analysis.
+This tutorial will continue the analysis of the ChIP-seq peak data that we squired in part 1. Let's have another look at our workflow. We now have our chip-seq peaks called in a bed file and are ready for our downstream analysis.
 
 
 
 ![](images/park_workflow.jpg)
 
-For the purposes of looking at peak annotation and enrichments we will look at the complete peak data for the breast cancer dataset. In part 1 we examined a smaller subset of this data in order to carry out alignments and peak calling within a shorter timeframe. The next part of our analysis involves annotating our peaks, carrying out a differntial peak enrichment analysis and visualisations.
+For the purposes of looking at peak annotation and enrichments we will look at the complete peak data for the breast cancer dataset. In part 1 we examined a smaller subset of this data in order to carry out alignments and peak calling within a shorter time frame. The next part of our analysis involves annotating our peaks, carrying out a differential peak enrichment analysis and visualisations.
 
 
 # Working in Rstudio
 
-For the second part of the analysis we will move onto using the R programming language in RStudio. R is a very useful tool for quickly manipulating and visualising biological data and will allow us to visualise, annotate and investigate our peak data. You can get more information on R and the Sheffield Bioinfomratics Core online trainng materials [here](https://sbc.shef.ac.uk/training/r-introduction-2020-03-03/).
+For the second part of the analysis we will move onto using the R programming language in RStudio. R is a very useful tool for quickly manipulating and visualising biological data and will allow us to visualise, annotate and investigate our peak data. You can get more information on R and the Sheffield Bioinformatics Core online training materials [here](https://sbc.shef.ac.uk/training/r-introduction-2020-03-03/).
 
-Organising your R analyses into project is good practise for keeping all files relevant to a particular piece of work in one place. Open up RStudio and create a new project:
+Organising your R analyses into project is good practice for keeping all files relevant to a particular piece of work in one place. Open up RStudio and create a new project:
 
 <div class="information">
 
@@ -133,7 +133,7 @@ summary(FOXA1.size)
 ```
 ## Remove all peaks that are larger than 2kb
 
-We can romive unusually large peak widths by assining a threshold and removing peaks that are larger than it.
+We can remove unusually large peak widths by assigning a threshold and removing peaks that are larger than it.
 
 ```{r}
 FOXA1 <- FOXA1[width(FOXA1) <= 2000]
