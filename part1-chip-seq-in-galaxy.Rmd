@@ -171,7 +171,7 @@ If you are interested in deriving the quality scores for each base then there is
 
 ### Command line
 
-```{bash}
+```{bash eval=FALSE}
 #help for fastqc
 $IMAGE_BASE fastqc -h
 
