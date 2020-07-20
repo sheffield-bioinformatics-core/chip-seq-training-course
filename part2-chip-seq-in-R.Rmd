@@ -6,6 +6,7 @@ output:
   html_notebook: 
     toc: yes
     toc_float: yes
+    css: stylesheets/styles.css
 editor_options: 
   chunk_output_type: inline
 ---
@@ -37,15 +38,39 @@ Some of these materials are based on courses available at .
 # Tutorial overview
 This tutorial will continue the analysis of the ChIP-seq peak data that we aquired in part 1. Let's have another look at our workflow. We now have our chip-seq peaks called in a bed file and are ready for our downstram analysis.
 
-For the purposes of looking at peak annotation and enrichments we will look at the complete peak data for the breast cancer dataset. In part 1 we examined a smaller subset of this data for time restrictions.
+
 
 ![](images/park_workflow.jpg)
 
-For the second part of the analysis we will move onto using the R programming language in RStudio. R is a very useful tool for quickly manipulating and visualising biological data and will allow us to visualise, annotate and investigate our peak data.   Please open up Rstudio now and install the following required packages.
----
+For the purposes of looking at peak annotation and enrichments we will look at the complete peak data for the breast cancer dataset. In part 1 we examined a smaller subset of this data in order to carry out alignments and peak calling within a shorter timeframe. The next part of our analysis involves annotating our peaks, carrying out a differntial peak enrichment analysis and visualisations.
 
-# 1 Required R packages
-Install the packages we will need for the analysis
+
+# Working in Rstudio
+
+For the second part of the analysis we will move onto using the R programming language in RStudio. R is a very useful tool for quickly manipulating and visualising biological data and will allow us to visualise, annotate and investigate our peak data. You can get more information on R and the Sheffield Bioinfomratics Core online trainng materials [here](https://sbc.shef.ac.uk/training/r-introduction-2020-03-03/).
+
+Organising your R analyses into project is good practise for keeping all files relevant to a particular piece of work in one place. Open up RStudio and create a new project:
+
+<div class="information">
+
+**File > New Project > Existing Directory > …choose workshop material directory**
+
+</div>
+
+We’ve now turned our workshop material folder into an Rstudio project and launched it.
+
+We’ll also be carrying out our analysis  in an R Notebook which allow us keep each R code in executable chunks with output visible immediately beneath the input.
+
+Let’s open an R Notebook to start work in.
+
+<div class="information">
+
+**File > New File > R notebook**
+
+</div>
+
+# Required R packages
+In this afternoons analysis we will need to use several R packages. If you have not already done so, please install the packages we will need for the analysis using the code below.
 
 ```{r}
 if(!require(ChIPpeakAnno)) BiocManager::install("ChIPpeakAnno")
@@ -57,9 +82,9 @@ if(!require(reactome.db)) BiocManager::install("reactome.db")
 
 ```
 
-# 2. Upload Data
+# Upload Data
 
-Upload our MACS2 peak bed files that we downloaded from galaxy
+Once we have the packages downloaded, we can upload our MACS2 peak bed files that we downloaded from galaxy. We will first open the readr package, which allows us to import spreadsheets (like our bed file!) into R
 
 ```{r}
 library(readr)

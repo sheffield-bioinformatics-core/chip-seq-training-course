@@ -1,0 +1,112 @@
+Skip to content
+Search or jump to…
+
+Pull requests
+Issues
+Marketplace
+Explore
+
+@evchambers 
+sheffield-bioinformatics-core
+/
+  r-online
+2
+0
+0
+Code
+Issues
+Pull requests
+Actions
+Projects
+Wiki
+Security
+Insights
+r-online/stylesheets/styles.css
+@markdunning
+markdunning Formatting and typo checking
+…
+Latest commit 5356f1f 5 days ago
+History
+1 contributor
+68 lines (54 sloc)  1.07 KB
+
+
+body {
+  font-family: Calibri, helvetica, sans-serif;
+  font-size: 150%;
+  max-width: 2000px;
+}
+
+
+body .main-container {
+  max-width: 900px;
+}
+
+h1 {
+  color: rgb(0, 159, 218);
+  font-size: 200%;
+  font-weight: bold;
+}
+
+
+h2 {
+  color: rgb(31, 20, 93);
+  font-size: 150%;
+  font-weight: bold;
+}
+
+h3 {
+  color: rgb(31, 20, 93);
+  font-size: 125%;
+  font-weight: bold;
+}
+
+h4 {
+  color: rgb(31, 20, 93);
+  font-size: 100%;
+  font-weight: bold;
+  font-style: italic;
+}
+
+.title {
+  margin-right: 200px;
+  font-size: 100%;
+}
+
+.exercise{
+  font-family: Calibri, helvetica, sans-serif;
+  width: 100%;
+  height: 100%;
+  background-color: rgb(249,227,0);
+}
+
+.information{
+  font-family: Calibri, helvetica, sans-serif;
+  width: 100%;
+  height: 100%;
+  background-color: rgb(190,214,0);
+}
+
+.warning{
+  font-family: Calibri, helvetica, sans-serif;
+  width: 100%;
+  height: 100%;
+  background-color: rgb(209,0,116);
+}
+
+
+.list-group-item.active, .list-group-item.active:focus, .list-group-item.active:hover {
+  background-color: rgb(55, 56, 149);
+}
+© 2020 GitHub, Inc.
+Terms
+Privacy
+Security
+Status
+Help
+Contact GitHub
+Pricing
+API
+Training
+Blog
+About
