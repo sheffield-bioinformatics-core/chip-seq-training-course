@@ -70,13 +70,14 @@ Let’s open an R Notebook to start work in.
 </div>
 
 # Required R packages
-In this afternoons analysis we will need to use several R packages. If you have not already done so, please install the packages we will need for the analysis using the code below.
+In this afternoons analysis we will need to use several R packages. If you have not already done so, please install the packages we will need for the analysis using the code chunk below.
 
 ```{r}
 if(!require(ChIPpeakAnno)) BiocManager::install("ChIPpeakAnno")
 if(!require(TxDb.Hsapiens.UCSC.hg18.knownGene)) BiocManager::install("TxDb.Hsapiens.UCSC.hg18.knownGene")
 if(!require(org.Hs.eg.db))BiocManager::install("org.Hs.eg.db")
 if(!require(dplyr)) BiocManager::install("dplyr")
+if(!require(readr)) BiocManager::install("readr")
 if(!require(rtracklayer)) BiocManager::install("rtracklayer")
 if(!require(reactome.db)) BiocManager::install("reactome.db")
 
@@ -84,19 +85,25 @@ if(!require(reactome.db)) BiocManager::install("reactome.db")
 
 # Upload Data
 
-Once we have the packages downloaded, we can upload our MACS2 peak bed files that we downloaded from galaxy. We will first open the readr package, which allows us to import spreadsheets (like our bed file!) into R
+Once we have the packages downloaded, we can upload our MACS2 peak bed files into R. We will be using the complete FOXA1 and ER datasets that should be available to you in the data folder. We load both tables into R using the read.table() function. The head() function allows us to look at the top 5 lines of each data frame and check our data looks OK.
 
 ```{r}
 FOXA1_df <- read.table("data/FOXA1_full.bed", header=TRUE)
 head(FOXA1_df)
 
+ER_df <- read.table("data/ER_full.bed", header=TRUE)
+head(ER_df)
+
 ```
 
 
-# Convert peaks into a GRanges object
-A GRanges object form the GenomicRanges packages is a container for genomic locations and their associated annotations. We will use this data structure for the ChIP-seq peak coordinates.
+# Convert to a GRanges object
+The next step is to convert our uploaded data frames into a GRanges object for further analysis. A GRanges object from the GenomicRanges package is a container for genomic locations and their associated annotations and so is perfect for us to deal with our ChIP-seq peak coordinates.
+
+Here is the R code for converting the FOXA1 data into a GRanges object...
+
 ```{r}
-library(GenomicRanges) # load the GenomicRanges pakcage
+library(GenomicRanges) # load the GenomicRanges package
 
 FOXA1 <- GRanges(
   FOXA1_df$chr,
@@ -105,16 +112,35 @@ FOXA1 <- GRanges(
 )
 
 # we can add more data to each peak subsequently
-names(FOXA1) <- paste("FOXA1_peak", 1:nrow(FOXA1_df), sep="_")
 score(FOXA1) <- FOXA1_df[,"X.10.log10.pvalue."] 
 
 # show the first and last lines of the GRanges object
 FOXA1
 ```
 
-# Basic number and statistics of the FOXA1 peaks
 
-Now we have loaded in the FOXA1 peaks and converted into a GRanges object, we can carry out some basic statistical analysis and plot simple visualisations.
+... and the ER data.
+
+The ER data is in a slightly different format. If you look at the raw data you will see that the FOXA1_full.bed file has all the columns from the MACS2 output and the ER_full.bed file is in a more traditional bed format (chr, start, end, score). This was how the lab released their full data online. Sometimes when dealing with publicly available data these kinds of discrepencies can occur. Most importantly it doesn't affect our downstream analysis of the peaks.
+```{r}
+ER <- GRanges(
+  ER_df$chr,
+  IRanges(ER_df$start, ER_df$end),
+    strand="*"
+)
+
+# we can add more data to each peak subsequently
+score(ER) <- ER_df$score
+
+
+# show the first and last lines of the GRanges object
+ER
+
+```
+
+# Basic peak statistics
+
+Now we have loaded in the peaks and converted into a GRanges object, we can carry out some basic statistical analysis and plot simple visualisations. We will do this for the FOXA1  peaks.
 
 ## Calculate the number of peaks
 
@@ -131,7 +157,7 @@ The function width() returns the sizes of all ranges in a GRanges object as vect
 FOXA1.size <- width(FOXA1)
 summary(FOXA1.size)
 ```
-## Remove all peaks that are larger than 2kb
+## Visualisations of peaks
 
 We can remove unusually large peak widths by assigning a threshold and removing peaks that are larger than it.
 
@@ -147,8 +173,7 @@ hist(width(FOXA1), xlab="FOXA1 peak size", col="gray")
 ```
 
 
-What is the distribution of FOXA1 ChIP-seq peak p-values?
-We plot the histogram of −log10 transformed p-values. Remember that we stored them in the score column of the GRanges object. We can access them using the function score().
+We may want to look at the distribution of the pvalues associated with each peak. When assigning the GRanges objects earlier, we saved the pvalues in the 'score' column. We can access this data and plot another histogram.
 
 ```{r}
 # get the -log_10 transformed p-values from the score column
@@ -156,38 +181,27 @@ mlPvals <- score(FOXA1)
 hist(mlPvals, xlab="-log_10(p-value)", col="gray")
 ```
 
-###   Read in the ER peaks 
-
-```{r, }
+## Exercise
 
 
-# bed format
-ER <- import("data/ER_full.bed", format="bed")
-#We fix the name and score columns.
+<div class="information">
 
-# assign scores by converting the 'name' feald to type numeric
-score(ER) <- as.numeric(ER$name)
+**We have carried out basic stats and peak visualsations for the FOXA1 data, now do the same for the ER data.**
 
-# overwrite the name column
-ER$name <- paste("ER_peaks", 1:length(ER), sep="_")
-
-# use the names() function 
-names(ER) <- ER$name 
-ER
-```
+</div>
 
 # Compare the peaks of ER and FOXA1
 
-Make a barplot of the number of peaks
+Now we have both datasets loaded as GRanges objects and done some basic stats to ensure our data looks OK we can start comparing peaks across both datasets. Let's start by plotting a simple barplot.
+
+
 ```{r}
 bp <- barplot(c(length(ER), length(FOXA1)), names=c("ER", "FOXA1"))
 # add actual values as text lables to the plot
 text(bp, c(length(ER), length(FOXA1)), labels=c(length(ER), length(FOXA1)), pos=1)
 ```
 
-Use handy function from `ChIPpeakAnno` to calculate the overlaps Then we use the package Vennerable to build a Venn object with the number of peaks in each subset. This object can than be passed to the ‘plot’ function.
-
-
+To get the number of overlaps across the peaks we will use the functions from the package `ChIPpeakAnno`. 'findOverlapsOfPeaks' is a function that finds the overlaps between two GRanges objeects.
 
 ## How many ER peaks overlap FOXA1 peaks?
 ```{r}
@@ -199,7 +213,7 @@ overlaps <- ovlHits$peaklist[["ER///FOXA1"]]
 
 ```
 
-
+We can use this overlap data to plot a Venn Diagram
 
 ```{r}
 makeVennDiagram(list(ER, FOXA1), NameOfPeaks=c("ER", "FOXA1"),
@@ -277,6 +291,8 @@ over <- getEnrichedGO(overlaps_anno, orgAnn="org.Hs.eg.db",
                       maxP = 0.05, minGOterm = 10,
                       multiAdjMethod = "BH",condense = TRUE)
 write_csv(over[["bp"]], path = "overlap_peaks_GO.csv")
+
+head(over[["bp"]])
 ```
 
 ## Enrichment with Reactome
@@ -302,6 +318,8 @@ path %>% left_join(gene_anno) %>%
   select(-ENTREZID, -PATH, -totaltermInDataset, -totaltermInGenome, -SYMBOL)  %>% 
   arrange(pvalue) %>% 
   write_csv("overlap_peaks_reactome.csv")
+
+
 ```
 
 
